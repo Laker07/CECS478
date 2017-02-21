@@ -14,15 +14,15 @@ let encrypt = function encrypt(text){
 	let iv = forge.random.getBytesSync(16)
 	let cipher = forge.cipher.createCipher('AES-CBC', aesKey)
 	cipher.start({iv:iv})
+	
 	cipher.update(forge.util.createBuffer(iv +":"+ text))
 	cipher.finish()
-	aesEncrypted = cipher.output;
-	//console.log(aesEncrypted.toHex())
+	aesEncrypted = cipher.output.getBytes()	
 	
 	//hmac
 	let hmac = forge.hmac.create()
 	hmac.start('sha256', hmacKey)
-	hmac.update(aesEncrypted.toHex())
+	hmac.update(aesEncrypted)
 	let tag = hmac.digest();
 	//console.log(tag.toHex())
 
@@ -34,8 +34,8 @@ let encrypt = function encrypt(text){
 
 
 	var obj ={
-		aesCipher : aesEncrypted.toHex(),
-		hmacTag : tag.toHex(),
+		aesCipher : aesEncrypted,
+		hmacTag : tag,
 		rsaCipher : rsaCipher
 	}
 
