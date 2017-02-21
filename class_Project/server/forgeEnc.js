@@ -15,26 +15,29 @@ let encrypt = function encrypt(text){
 	let cipher = forge.cipher.createCipher('AES-CBC', aesKey)
 	cipher.start({iv:iv})
 	
-	cipher.update(forge.util.createBuffer(iv + text))
+	cipher.update(forge.util.createBuffer(text))
 	cipher.finish()
 	aesEncrypted = cipher.output.getBytes()	
+
+	//aesEcrypted plus IV
+	aesPlusIV = iv+aesEncrypted
 	
 	//hmac
 	let hmac = forge.hmac.create()
 	hmac.start('sha256', hmacKey)
-	hmac.update(aesEncrypted)
+	hmac.update(aesPlusIV)
 	let tag = hmac.digest();
 	//console.log(tag.toHex())
 
 	//rsa
 	var publicKey = forge.pki.publicKeyFromPem(rsak)
-	let combined = aesKey+":"+hmacKey
+	let combined = aesKey+hmacKey
 	var rsaCipher = publicKey.encrypt(combined)
 	//console.log(rsaCipher)
 
 
 	var obj = {
-		aesCipher : aesEncrypted,
+		aesCipher : aesPlusIV,
 		hmacTag : tag,
 		rsaCipher : rsaCipher
 	}
@@ -42,7 +45,7 @@ let encrypt = function encrypt(text){
 	return obj; 
 }
 
-//console.log(encrypt("hello world"))
+console.log(encrypt("hello world"))
 
 
 module.export = encrypt
