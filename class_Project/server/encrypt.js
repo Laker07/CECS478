@@ -8,7 +8,7 @@ iv 32
 
 */
 
-
+/*
 
 var crypto = require('crypto') //publicc RSA  - for public encryp and pri decription
 var fs = require('fs')
@@ -76,4 +76,4 @@ function encrypt(text){
 }
 
 encrypt("hello")
-
+*/
