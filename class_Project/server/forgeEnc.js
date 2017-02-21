@@ -15,7 +15,7 @@ let encrypt = function encrypt(text){
 	let cipher = forge.cipher.createCipher('AES-CBC', aesKey)
 	cipher.start({iv:iv})
 	
-	cipher.update(forge.util.createBuffer(iv +":"+ text))
+	cipher.update(forge.util.createBuffer(iv + text))
 	cipher.finish()
 	aesEncrypted = cipher.output.getBytes()	
 	
@@ -33,7 +33,7 @@ let encrypt = function encrypt(text){
 	//console.log(rsaCipher)
 
 
-	var obj ={
+	var obj = {
 		aesCipher : aesEncrypted,
 		hmacTag : tag,
 		rsaCipher : rsaCipher
@@ -42,7 +42,7 @@ let encrypt = function encrypt(text){
 	return obj; 
 }
 
-console.log(encrypt("hello world"))
+//console.log(encrypt("hello world"))
 
 
 module.export = encrypt
