@@ -1,6 +1,5 @@
 var dec = require('./Decrypter.js');
-
+var enc = require('./forgeEnc.js');
 //test json object
-var input = '{"firstName":"John", "lastName":"Doe"}';
 
-console.log(dec.decryptMessage(input));
+console.log(dec.decryptMessage(enc.encrypt("hello")));

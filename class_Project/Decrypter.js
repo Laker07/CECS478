@@ -24,23 +24,24 @@ module.exports = {
         
         //change the key for rsaobject
         let decryptedRSA = privateKey.decrypt(parsedInput['rsaCipher']);
-        let aesKey = substr(decryptedRSA, 0, 31);
-        let hmacKey = substr(decryptedRSA, 32, 63);
+        let aesKey = decryptedRSA.substring(0, 32);
+        let hmacKey = decryptedRSA.substring(32);
         
         let hmac = forge.hmac.create();
         hmac.start('sha256', hmacKey);
         hmac.update(parsedInput['aesCipher']);
-        
+
         if(parsedInput['hmacTag'] != hmac.digest().toHex())
             throw "ERROR WITH THE TAGS";
-    
-        
+       
         let decipher = forge.cipher.createDecipher('AES-CBC', aesKey);
-        let iv = substr(parsedInput['aesCipher'], parsedInput['aesCipher'].length - 16);
+        let iv = parsedInput['aesCipher'].substring(0, 16);
         decipher.start({iv: iv});
-        decipher.update(substr(parsedInput['aesCipher'], 0, (parsedInput['aesCipher'].length - 16)));
-        decipher.finish();
-        return decipher.output.toHex();
+        decipher.update(parsedInput['aesCipher'].substring(16));
+        //decipher.finish();
+        
+        //return decipher.output.toHex();
+        return "test";
     }
     
 };
