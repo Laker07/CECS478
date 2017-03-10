@@ -7,51 +7,43 @@ var connection = mysql.createConnection({
    host     : 'localhost',
    user     : 'root',
    password : '',
-   database : 'tempdb'
+   database : 'ServerDB'
  });
  
 var app = express();
 
 
 app.get("/", function(req,res){
- res.send("Hello world!");
+ res.send("hello");
 });
 
+//used for the client to retrieve their messages
 app.get("/message", function(req, res) {
   
-  //if no id is provided cancel the request
-  if(typeof req.query["user_id"] === "undefined") {
-    res.send("No user id provided");
-    return;
-  }
-
-  var getMessageQuery ="SELECT * FROM table1 WHERE reciver_id="+req.query["user_id"];
+  //if no id is provided end the request  
+  if(typeof req.query["username"] === "undefined")
+    return res.send("No user id provided");
+  
   //execute the query in the db
+  var getMessageQuery ="SELECT * FROM messages WHERE receiverName=\""+req.query["username"]+"\";";
+  //console.log(getMessageQuery);
   connection.query(getMessageQuery, function(err, results, fields) {
-    if (err) {
-      //error occures exit function
-      res.send("Error while performing Query.");
-      return;
-    }
+    if (err)
+      //error occures, exit function
+      return res.send("Error while performing Query.");
     else {
-      //console.log(results.length);
       var jsonArray = new Array();
       //user can have multiple messages waiting for them so create an array to store them all
       for (var i  = 0; i < results.length; i++) {
         //put each message with the users 
-        
         jsonArray[i] = {
           message:results[i]["message"],
-          sender:results[i]["sender_id"]
+          sender:results[i]["username"]
         }  
       }
-      //todo create an array and then return it gg ez
-      //do lookup for username for who sent the message
-      //res.send(jsonArray);
-      res.json(jsonArray)
-      res.end();
-      //res.end
-      return;
+
+      //add method to delete records after reading
+      return res.json(jsonArray);
     }
   });  
 });
@@ -62,21 +54,40 @@ console.log('listening on 8080');
 });
 
 /*
-
+notes, will be deleted later:
 brew services start mysql
   mysql -uroot
 
-CREATE TABLE table1
-(
-  sender_id       INT unsigned NOT NULL,
-  message         VARCHAR(150) NOT NULL,   
-  message_id      INT unsigned NOT NULL,
-  reciver_id      INT unsigned NOT NULL,          
-  PRIMARY KEY     (message_id)
-);
 
-INSERT INTO table1 (sender_id, message, message_id, reciver_id) VALUES
-(0001, "testmessage1", 00010001, 0002),
-(0002, "testmessage2", 00020001, 0001),
-(0001, "testmessage3", 00010002, 0002);
+table users
+userName VARCHAR(30) pk
+password VARCHAR(255)
+
+table messages
+userName VARCHAR(30)fk
+receiverName VARCHAR(30)
+message id int auto increment pk
+message varchar(500)
+
+
+use ServerDB;
+
+INSERT INTO users (username, password) VALUES
+("bob23", "123"),
+("smith12", "abc"),
+("joe42", "hello");
+
+
+SELECT * FROM users;
+
+
+INSERT INTO messages(username, receiverName, message) VALUES
+("bob23", "smith12", "Hello smith12"),
+("bob23", "smith12", "did you get my message?"),
+("smith12", "bob23", "yes I did");
+
+SELECT * FROM messages;
+
+
+
 */
