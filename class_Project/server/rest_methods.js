@@ -42,6 +42,15 @@ app.get("/message", function(req, res) {
         }  
       }
 
+      var deleteMyMessagesQuery = "DELETE FROM messages WHERE receiverName=\""+req.query["username"]+"\";";
+      //console.log(deleteMyMessagesQuery);
+      //delete the messages from the database since they are being sent to user
+      connection.query(deleteMyMessagesQuery, function(err, results, fields) {
+        if(err)
+          return res.send("error updating the db");
+      });
+        
+      
       //add method to delete records after reading
       return res.json(jsonArray);
     }
@@ -54,11 +63,6 @@ console.log('listening on 8080');
 });
 
 /*
-notes, will be deleted later:
-brew services start mysql
-  mysql -uroot
-
-
 table users
 userName VARCHAR(30) pk
 password VARCHAR(255)
@@ -68,26 +72,4 @@ userName VARCHAR(30)fk
 receiverName VARCHAR(30)
 message id int auto increment pk
 message varchar(500)
-
-
-use ServerDB;
-
-INSERT INTO users (username, password) VALUES
-("bob23", "123"),
-("smith12", "abc"),
-("joe42", "hello");
-
-
-SELECT * FROM users;
-
-
-INSERT INTO messages(username, receiverName, message) VALUES
-("bob23", "smith12", "Hello smith12"),
-("bob23", "smith12", "did you get my message?"),
-("smith12", "bob23", "yes I did");
-
-SELECT * FROM messages;
-
-
-
 */
