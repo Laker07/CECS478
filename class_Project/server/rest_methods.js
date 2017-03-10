@@ -14,11 +14,47 @@ var app = express();
 
 
 app.get("/", function(req,res){
- res.send("hello");
+ res.send("welcome to cecs.me");
+});
+
+//used for adding a new user to db
+app.put("/newuser",function(req,res) {
+  
+  //check that the values were provided
+  if((typeof req.query["username"] === "undefined") || (typeof req.query["password"] === "undefined"))
+    return res.send("Error with inputs");
+  
+  var addNewUserQuery = "INSERT INTO users (username, password) VALUES (\"" + req.query["username"] + "\", \"" + req.query["password"] +"\");";
+  //insert new user to db
+  connection.query(addNewUserQuery, function(err, results, fields) {
+    if (err)
+      //error occures, exit function
+      return res.send("Error executing query " + err);
+      else
+        return res.send(req.query["username"] + " added to db");
+  });
+
+});
+
+//used for sending a message
+app.post("/sendMessage",function(req,res) {
+
+  if((typeof req.query["username"] === "undefined") || (typeof req.query["receiverName"] === "undefined") || (typeof req.query["message"] === "undefined"))
+    return res.send("Error with inputs");
+  var sendMessageQuery = "INSERT INTO messages(username, receiverName, message) VALUES (\"" + req.query["username"] + "\", \"" + req.query["receiverName"] + "\", \"" + req.query["message"] + "\");"
+
+  //put message into databse
+  connection.query(sendMessageQuery, function(err, results, fields) {
+    if (err)
+      //error occures, exit function
+      return res.send("Error executing query " + err);
+    else
+      return res.send("Message sent to: " + req.query["receiverName"])
+  });
 });
 
 //used for the client to retrieve their messages
-app.get("/message", function(req, res) {
+app.get("/getMessages", function(req, res) {
   
   //if no id is provided end the request  
   if(typeof req.query["username"] === "undefined")
@@ -26,11 +62,10 @@ app.get("/message", function(req, res) {
   
   //execute the query in the db
   var getMessageQuery ="SELECT * FROM messages WHERE receiverName=\""+req.query["username"]+"\";";
-  //console.log(getMessageQuery);
   connection.query(getMessageQuery, function(err, results, fields) {
     if (err)
       //error occures, exit function
-      return res.send("Error while performing Query.");
+      return res.send("Error executing query " + err);
     else {
       var jsonArray = new Array();
       //user can have multiple messages waiting for them so create an array to store them all
@@ -43,16 +78,14 @@ app.get("/message", function(req, res) {
       }
 
       var deleteMyMessagesQuery = "DELETE FROM messages WHERE receiverName=\""+req.query["username"]+"\";";
-      //console.log(deleteMyMessagesQuery);
       //delete the messages from the database since they are being sent to user
       connection.query(deleteMyMessagesQuery, function(err, results, fields) {
         if(err)
-          return res.send("error updating the db");
+          return res.send("Error executing query " + err);
+        else
+          //return json array of messages
+          return res.json(jsonArray);
       });
-        
-      
-      //add method to delete records after reading
-      return res.json(jsonArray);
     }
   });  
 });
@@ -63,6 +96,15 @@ console.log('listening on 8080');
 });
 
 /*
+put
+localhost:8080/newuser?username=jynx&password=123qwerty
+post
+localhost:8080/sendMessage?username=jynx&receiverName=jane1&message=hey
+get
+localhost:8080/getMessages?username=jane1
+
+
+
 table users
 userName VARCHAR(30) pk
 password VARCHAR(255)
