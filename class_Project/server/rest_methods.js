@@ -14,8 +14,11 @@ var app = express();
 
 
 app.get("/", function(req,res){
+
+
  res.send("welcome to cecs.me");
 });
+
 
 //used for adding a new user to db
 app.put("/newuser",function(req,res) {
@@ -90,6 +93,29 @@ app.get("/getMessages", function(req, res) {
   });  
 });
 
+//used to verify if the user can sign into app
+app.get("/signIn", function(req, res) {
+
+  //check that the values were provided
+  if((typeof req.query["username"] === "undefined") || (typeof req.query["password"] === "undefined"))
+    return res.send("Error with inputs");
+  //check here if password and username are the same in database, if they are then return success else nope
+  var signInQuery="SELECT EXISTS (SELECT 1 FROM users WHERE username=\"" + req.query["username"] + "\" AND password=\"" + req.query["password"] + "\");";
+  connection.query(signInQuery, function(err, results, fields) {
+    if (err)
+      //error occures, exit function
+      return res.send("Error executing query " + err);
+    else
+      if(results[0][signInQuery.substring(7, signInQuery.length - 1)])
+        return res.send("Auth");
+      else 
+        return res.send("Fail");
+  });
+
+
+});
+
+
 app.listen(8080, 'localhost',function(){
 console.log('listening on 8080');
 
@@ -102,7 +128,8 @@ post
 localhost:8080/sendMessage?username=jynx&receiverName=jane1&message=hey
 get
 localhost:8080/getMessages?username=jane1
-
+get
+localhost:8080/signIn?username=jane1&password=123qwerty
 
 
 table users
