@@ -169,9 +169,9 @@ signIn - get
 localhost:8080/signIn?data={"username":"34545", "password":"unknown"}
 localhost:8080/signIn?data={"username":"chrome24", "password":"mike"}
 sendMessage - post
-localhost:8080/sendMessage?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjM0NTQ1IiwiaWF0IjoxNDg5NzE5MzMxfQ.DwnKx74nKWHJja4ixWDpw0ia2wv2LRktFqfl-1NoYHY&data={"receiverName":"chrome24", "message":"hello, test message", "timeStamp":"2017-03-16 02:23:53"}
+localhost:8080/sendMessage?token=TOKENGOESHERE&data={"receiverName":"chrome24", "message":"hello, test message", "timeStamp":"2017-03-16 02:23:53"}
 getMessage - get
-localhost:8080/getMessages?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNocm9tZTI0IiwiaWF0IjoxNDg5NzIzMDIxfQ.fdMmxgmBvNmIQ02cb19R07oziRhtXRNSKiifubxIWgE
+localhost:8080/getMessages?token=TOKENGOESHERE
 
 
 adding messages to db
