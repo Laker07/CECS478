@@ -9,14 +9,14 @@ var bodyParser = require('body-parser');
 var connection = mysql.createConnection({
    host     : 'localhost',
    user     : 'root',
-   password : '',
+   password : 'goku562',
    database : 'ServerDB2'
  });
 
 var secretTxt = fileSystem.readFileSync('secret.txt', 'utf8');
 var app = express();
 
-app.use(expressJWT({secret: secretTxt }).unless({path:['/','/signIn','/register']}));
+app.use(expressJWT({secret: secretTxt, requestProperty: 'auth' }).unless({path:['/','/signIn','/register']}));
 var jsonParser = bodyParser.json()
 
 app.use(jsonParser);
@@ -127,42 +127,43 @@ app.post("/sendMessage",function(req,res) {
 
 //used for the client to retrieve their messages
 app.get("/getMessages", function(req, res) {
-  
-  // //if no id is provided end the request  
-  // if(typeof req.query["token"] === "undefined")
-  //   return res.send({'response': 'Error', 'error': "wrong inputs"});
-  
-  // //open the secret
-  // var secret = fileSystem.readFileSync('secret.txt', 'utf8');
 
-  let decoded ="";
-  try {//verify the jwt token
-    decoded = jwt.verify(req.query['token'], secretTxt);
-  } catch (Error) {//does not pass the verification, exit method
-     console.log("error validating name")
-  }
+  console.log(req.auth.username);
+
+  var getMessageQuery ="SELECT * FROM messages WHERE receiverName=\""+req.auth.username+"\";";
+  let jsonArray = new Array();
+  connection.query(getMessageQuery, function(err, results, fields) {
+    if (err)
+      //error occures, exit function
+      return res.send({'response': 'Error', 'error': err});
+    else {
+      //user can have multiple messages waiting for them so create an array to store them all
+      console.log("results length : " +results.length);
+      // for (var i  = 0; i < results.length; i++) {
+      //   //put each message with the users 
+      //   console.log("messages " + results[i]["message"] );
+      //   jsonArray[i] = {
+      //     message:results[i]["message"],
+      //     sender:results[i]["username"],
+      //     // timestamp:results[i]["timestamp"]
+      //   }  
+      // }
+        //test with user that has messages
+        jsonArray[0] = {
+          message:results[0]["message"],
+          sender:results[0]["username"],
+          timestamp:results[0]["timestamp"]
+        }  
+        jsonArray[1] = {
+          message:results[1]["message"],
+          sender:results[1]["username"],
+          timestamp:results[1]["timestamp"]
+        }  
+      console.log(jsonArray);
+      //res.send(jsonArray);
+      res.sendStatus(200); //working on the client side to get results
   
-
-  console.log(decode[username]);
-  //execute the query in the db
-  var getMessageQuery ="SELECT * FROM messages WHERE receiverName=\""+req.body.username+"\";";
-  // connection.query(getMessageQuery, function(err, results, fields) {
-  //   if (err)
-  //     //error occures, exit function
-  //     return res.send({'response': 'Error', 'error': err});
-  //   else {
-  //     var jsonArray = new Array();
-  //     //user can have multiple messages waiting for them so create an array to store them all
-  //     for (var i  = 0; i < results.length; i++) {
-  //       //put each message with the users 
-  //       jsonArray[i] = {
-  //         message:results[i]["message"],
-  //         sender:results[i]["username"],
-  //         timestamp:results[i]["timestamp"]
-  //       }  
-  //     }
-  //     res.send(jsonArray);
-
+      //todo after first part is working
   //     // var deleteMyMessagesQuery = "DELETE FROM messages WHERE receiverName=\""+ decoded["username"]+"\";";
   //     // //delete the messages from the database since they are being sent to user
   //     // connection.query(deleteMyMessagesQuery, function(err, results, fields) {
@@ -172,12 +173,10 @@ app.get("/getMessages", function(req, res) {
   //     //     //return json array of messages
   //     //     return res.json({'response': 'Success', 'messagecount': i, "messages": jsonArray});
   //     // });
-  //   }
-  // });  
+   }
+   });  
  
 });
-
-
 
 app.listen(8081, 'localhost',function(){
 console.log('listening on 8081');
