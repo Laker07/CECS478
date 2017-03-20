@@ -103,7 +103,12 @@ app.post("/sendMessage",function(req,res) {
 
 //used for the client to retrieve their messages
 app.get("/getMessages", function(req, res) {
-  
+   let decode =""; 
+   try {verify the token
+     decoded = jwt.verify(req.query['token'], secretTxt);
+   } catch (Error) {//does not pass the verification, exit method
+     return res.send({'response': 'Error', 'error': "error"});
+   }
   //if no id is provided end the request  
   if(typeof req.query["username"] === "undefined")
     return res.send("No user id provided");
@@ -196,3 +201,41 @@ receiverName VARCHAR(30)
 message id int auto increment pk
 message varchar(500)
 */
+
+
+app.get("/getMessages", function(req, res) {
+  
+  // //if no id is provided end the request  
+  // if(typeof req.query["token"] === "undefined")
+  //   return res.send({'response': 'Error', 'error': "wrong inputs"});
+  
+  // //open the secret
+  // var secret = fileSystem.readFileSync('secret.txt', 'utf8');
+
+  let decoded ="";
+  try {//verify the jwt token
+    decoded = jwt.verify(req.query['token'], secretTxt);
+  } catch (Error) {//does not pass the verification, exit method
+     console.log("error validating name")
+  }
+  
+
+  console.req.body.username;
+  //execute the query in the db
+  var getMessageQuery ="SELECT * FROM messages WHERE receiverName=\""+req.body.username+"\";";
+  connection.query(getMessageQuery, function(err, results, fields) {
+    if (err)
+      //error occures, exit function
+      return res.send({'response': 'Error', 'error': err});
+    else {
+      var jsonArray = new Array();
+      //user can have multiple messages waiting for them so create an array to store them all
+      for (var i  = 0; i < results.length; i++) {
+        //put each message with the users 
+        jsonArray[i] = {
+          message:results[i]["message"],
+          sender:results[i]["username"],
+          timestamp:results[i]["timestamp"]
+        }  
+      }
+      res.send(jsonArray);

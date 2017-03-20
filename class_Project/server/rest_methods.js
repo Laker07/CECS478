@@ -1,3 +1,4 @@
+
 var express = require("express");
 var mysql = require('mysql');
 var fileSystem = require('fs');
@@ -8,7 +9,7 @@ var bodyParser = require('body-parser');
 var connection = mysql.createConnection({
    host     : 'localhost',
    user     : 'root',
-   password : '',
+   password : 'goku562',
    database : 'ServerDB2'
  });
 
@@ -20,6 +21,10 @@ var jsonParser = bodyParser.json()
 
 app.use(jsonParser);
 
+app.get("/", function(req,res){
+
+ res.send("welcome to cecs.me");
+});
 
 app.post('/register', function (req, res) {
   if (!req.body) return res.sendStatus(400);
@@ -28,9 +33,8 @@ app.post('/register', function (req, res) {
   if(req.body.username.length < 1) return res.sendStatus(400);
   if(req.body.password.length < 1) return res.sendStatus(400);
   
-  var addNewUserQuery = "INSERT INTO users (username, password) VALUES (\"" + req.body.username + "\", \"" + req.body.password +"\");";
-    
-  connection.query(addNewUserQuery, function(err, results, fields) {
+  let values = {username: req.body.username, password: req.body.password};
+  connection.query('INSERT INTO users SET ?', values, function(err, results) {
     if (err){
     //to sends client invalid message - parsed to let user know to try a diff name/pwd
       console.log("SQL Error : " + err);
@@ -41,7 +45,7 @@ app.post('/register', function (req, res) {
     //create jwt token
       console.log(req.body.username +" has just registered...");
       //token is encoded with hmac SHA256 by default
-      var jwtToken = jwt.sign({'username': req.body.username}, secret);
+      var jwtToken = jwt.sign({'username': req.body.username}, secretTxt);
       res.send(
         {'response': 'Success', 
          'message': "JWT token generated and user register", 
@@ -52,11 +56,6 @@ app.post('/register', function (req, res) {
 })
 
 
-app.get("/", function(req,res){
-
- res.send("welcome to cecs.me");
-});
-
 //used to verify if the user can sign into app
 app.post("/signIn", function(req, res) {
 
@@ -66,16 +65,19 @@ app.post("/signIn", function(req, res) {
  
   console.log("this is the username :"+ req.body.username )
   //check here if password and username are the same in database
-  var signInQuery="SELECT EXISTS (SELECT 1 FROM users WHERE username=\"" + req.body.username + "\" AND password=\"" + req.body.password + "\");";
+  var signInQuery="SELECT EXISTS (SELECT 1 FROM users WHERE username=\"" + 
+      req.body.username + "\" AND password=\"" + req.body.password + "\");";
+
   connection.query(signInQuery, function(err, results, fields) {
-    if (err)
+    if (err){
       //error occures, exit function
-      return res.send({'response': 'Error', 'error': err});
-    else
-      if(results[0][signInQuery.substring(7, signInQuery.length - 1)]) {
+      console.log('login err: ' + err );
+      return res.send({'response': 'Error', 'error': 'Login Error'});
+    
+    }else if(results[0][signInQuery.substring(7, signInQuery.length - 1)]) {
         //create jwt token
         //token is encoded with hmac SHA256 by default
-        var jwtToken = jwt.sign({'username': req.body.username}, secret);
+        var jwtToken = jwt.sign({'username': req.body.username}, secretTxt);
         res.send(
             {'response': 'Success', 
              'message': "JWT token generated and user signed in", 
@@ -96,90 +98,82 @@ app.post("/signIn", function(req, res) {
 //used for sending a message
 app.post("/sendMessage",function(req,res) {
 
-/*
-{
-  String id;
-  String text;
-  String user;
-  Date date;
-  String jwt;
-*/
+
  console.log("was able to access!!")
-/*
-  //check the parameters 
-  if(!req.body.text)
-      res.status(400).send('text message required');
-  if(req.body.text.length === 0)
-       res.status(400).send('text message can not be empty');
-    //load secret
+ console.log(req.body.username);
+ console.log(req.body.receiverName);
+ console.log(req.body.message);
+ console.log(req.body.date);
 
-  // var decoded ="";
-  // try {//verify the token
-  //   decoded = jwt.verify(req.query['token'], secret);
-  // } catch (Error) {//does not pass the verification, exit method
-  //   return res.send({'response': 'Error', 'error': "error"});
-  // }
-  //data is in a json object so pare its
-  var userInput = JSON.parse(req.query["data"]);
+  if(!req.body) return res.sendStatus(400);
+  if(!req.body.username) return res.sendStatus(400);
+  if(!req.body.receiverName) return res.sendStatus(400);
+  if(!req.body.message) return res.sendStatus(400);
+  if(!req.body.date) return res.sendStatus(400);
 
-  var sendMessageQuery = "INSERT INTO messages(username, receiverName, message, timestamp) VALUES (\"" + decoded['username'] + "\", \"" + userInput["receiverName"] + "\", \"" + userInput["message"] + "\", \"" + userInput["timeStamp"] + "\");";
-
-  //put message into databse
-  connection.query(sendMessageQuery, function(err, results, fields) {
-    if (err)
-      //error occures, exit function
-      return res.send({'response': 'Error', 'error': err});
-    else
-      return res.send({'response': 'Success', 'Message': "Message sent to " + userInput["receiverName"]});
-  });  */
+  let values = {username: req.body.username, receiverName: req.body.receiverName,
+                message: req.body.message, timestamp: req.body.date};
+  connection.query('INSERT INTO messages SET ?', values, function(err, results) {
+    if (err){
+      console.log("SQL Error : " + err);
+      return res.send({'response ': 'error',
+                       'message': 'message did not go through',
+                       'jwt': ""});
+    }else{
+      return res.sendStatus(200);
+    }
+  });  
 });
 
 //used for the client to retrieve their messages
 app.get("/getMessages", function(req, res) {
   
-  //if no id is provided end the request  
-  if(typeof req.query["token"] === "undefined")
-    return res.send({'response': 'Error', 'error': "wrong inputs"});
+  // //if no id is provided end the request  
+  // if(typeof req.query["token"] === "undefined")
+  //   return res.send({'response': 'Error', 'error': "wrong inputs"});
   
-  //open the secret
-  var secret = fileSystem.readFileSync('secret.txt', 'utf8');
+  // //open the secret
+  // var secret = fileSystem.readFileSync('secret.txt', 'utf8');
 
-  var decoded ="";
+  let decoded ="";
   try {//verify the jwt token
-    decoded = jwt.verify(req.query['token'], secret);
+    decoded = jwt.verify(req.query['token'], secretTxt);
   } catch (Error) {//does not pass the verification, exit method
-    return res.send({'response': 'Error', 'error': "error"});
+     console.log("error validating name")
   }
   
+
+  console.log(decode[username]);
   //execute the query in the db
-  var getMessageQuery ="SELECT * FROM messages WHERE receiverName=\""+decoded["username"]+"\";";
-  connection.query(getMessageQuery, function(err, results, fields) {
-    if (err)
-      //error occures, exit function
-      return res.send({'response': 'Error', 'error': err});
-    else {
-      var jsonArray = new Array();
-      //user can have multiple messages waiting for them so create an array to store them all
-      for (var i  = 0; i < results.length; i++) {
-        //put each message with the users 
-        jsonArray[i] = {
-          message:results[i]["message"],
-          sender:results[i]["username"],
-          timestamp:results[i]["timestamp"]
-        }  
-      }
-      
-      var deleteMyMessagesQuery = "DELETE FROM messages WHERE receiverName=\""+ decoded["username"]+"\";";
-      //delete the messages from the database since they are being sent to user
-      connection.query(deleteMyMessagesQuery, function(err, results, fields) {
-        if(err)
-          return res.send({'response': 'Error', 'error': err});
-        else
-          //return json array of messages
-          return res.json({'response': 'Success', 'messagecount': i, "messages": jsonArray});
-      });
-    }
-  });  
+  var getMessageQuery ="SELECT * FROM messages WHERE receiverName=\""+req.body.username+"\";";
+  // connection.query(getMessageQuery, function(err, results, fields) {
+  //   if (err)
+  //     //error occures, exit function
+  //     return res.send({'response': 'Error', 'error': err});
+  //   else {
+  //     var jsonArray = new Array();
+  //     //user can have multiple messages waiting for them so create an array to store them all
+  //     for (var i  = 0; i < results.length; i++) {
+  //       //put each message with the users 
+  //       jsonArray[i] = {
+  //         message:results[i]["message"],
+  //         sender:results[i]["username"],
+  //         timestamp:results[i]["timestamp"]
+  //       }  
+  //     }
+  //     res.send(jsonArray);
+
+  //     // var deleteMyMessagesQuery = "DELETE FROM messages WHERE receiverName=\""+ decoded["username"]+"\";";
+  //     // //delete the messages from the database since they are being sent to user
+  //     // connection.query(deleteMyMessagesQuery, function(err, results, fields) {
+  //     //   if(err)
+  //     //     return res.send({'response': 'Error', 'error': err});
+  //     //   else
+  //     //     //return json array of messages
+  //     //     return res.json({'response': 'Success', 'messagecount': i, "messages": jsonArray});
+  //     // });
+  //   }
+  // });  
  
 });
 
