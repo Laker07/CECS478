@@ -28,18 +28,19 @@ app.post("/register", function(req, res) {
   
   //check if data was supplied
   if(!req.body)
-    return res.send({'response': 'Error', 'error': 'Parameter is undefined'});
+    return res.status(400).send({'response': 'Error', 'error': 'Parameter is undefined'});
+
   var addNewUserQuery = "INSERT INTO users (username, password) VALUES (\"" + req.body.username + "\", \"" + req.body.password +"\");";
   connection.query(addNewUserQuery, function(err, results, fields) {
     if (err)
       //error occured, exit function
-      return res.send({'response': 'Error', 'error': err});
+      return res.status(400).send({'response': 'Error', 'error': err});
     else {
       //create jwt token
       var secret = fileSystem.readFileSync('secret.txt', 'utf8');
       //token is encoded with hmac SHA256 by default
       var jwtToken = jwt.sign({'username': req.body.username}, secret, { expiresIn: '5h' });
-      return res.send({'response': 'Success', 'message': "JWT token generated and user register", 'jwtToken':jwtToken});   
+      return res.status(201).send({'response': 'Success', 'message': "JWT token generated and user register", 'jwtToken':jwtToken});   
     }
   });
 });
@@ -49,24 +50,24 @@ app.post("/signIn", function(req, res) {
 
   //check if the parameter data was supplied
   if(!req.body)
-    return res.send({'response': 'Error', 'error': 'Parameter is undefined'});
+    return res.status(400).send({'response': 'Error', 'error': 'Parameter is undefined'});
   
   //check here if password and username are the same in database
   var signInQuery="SELECT EXISTS (SELECT 1 FROM users WHERE username=\"" + req.body.username + "\" AND password=\"" + req.body.password + "\");";
   connection.query(signInQuery, function(err, results, fields) {
     if (err)
       //error occures, exit function
-      return res.send({'response': 'Error', 'error': err});
+      return res.status(400).send({'response': 'Error', 'error': err});
     else//db returns results in an index that is titled the query
       if(results[0][signInQuery.substring(7, signInQuery.length - 1)]) {
         //create jwt token
         var secret = fileSystem.readFileSync('secret.txt', 'utf8');
         //token is encoded with hmac SHA256 by default
         var jwtToken = jwt.sign({'username': req.body.username}, secret, { expiresIn: '5h' });
-        return res.send({'response': 'Success', 'message': "JWT token generated and user signed in", 'jwtToken':jwtToken});   
+        return res.status(201).send({'response': 'Success', 'message': "JWT token generated and user signed in", 'jwtToken':jwtToken});   
       }
       else 
-        return res.send({'response': 'Error', 'error': 'Incorrect username or password'});
+        return res.status(400).send({'response': 'Error', 'error': 'Incorrect username or password'});
   });
 });
 
@@ -76,14 +77,14 @@ app.post("/sendMessage",function(req,res) {
 
   //check the parameters 
   if(!req.body)
-    return res.send({'response': 'Error', 'error': "wrong inputs"});
+    return res.status(400).send({'response': 'Error', 'error': "wrong inputs"});
 
 
   var decoded ="";
   try {//verify the token
     decoded = jwt.verify(req.body.token, secret);
   } catch (Error) {//does not pass the verification, exit method
-    return res.send({'response': 'Error', 'error': "error"});
+    return res.status(400).send({'response': 'Error', 'error': "error"});
   }
   //data is in a json object so pare its
 
@@ -93,9 +94,9 @@ app.post("/sendMessage",function(req,res) {
   connection.query(sendMessageQuery, function(err, results, fields) {
     if (err)
       //error occures, exit function
-      return res.send({'response': 'Error', 'error': err});
+      return res.status(400).send({'response': 'Error', 'error': err});
     else
-      return res.send({'response': 'Success', 'Message': "Message sent to " + req.body.receiverName});
+      return res.status(200).send({'response': 'Success', 'Message': "Message sent to " + req.body.receiverName});
   });
 });
 
@@ -104,14 +105,14 @@ app.get("/getMessages", function(req, res) {
   
   //if no id is provided end the request  
   if(typeof req.query["token"] === "undefined")
-    return res.send({'response': 'Error', 'error': "wrong inputs"});
+    return res.status(400).send({'response': 'Error', 'error': "wrong inputs"});
   
 
   var decoded ="";
   try {//verify the jwt token
     decoded = jwt.verify(req.query['token'], secret);
   } catch (Error) {//does not pass the verification, exit method
-    return res.send({'response': 'Error', 'error': "error"});
+    return res.status(400).send({'response': 'Error', 'error': "error"});
   }
   
   //execute the query in the db
@@ -119,7 +120,7 @@ app.get("/getMessages", function(req, res) {
   connection.query(getMessageQuery, function(err, results, fields) {
     if (err)
       //error occures, exit function
-      return res.send({'response': 'Error', 'error': err});
+      return res.status(400).send({'response': 'Error', 'error': err});
     else {
       var jsonArray = new Array();
       //user can have multiple messages waiting for them so create an array to store them all
@@ -136,10 +137,10 @@ app.get("/getMessages", function(req, res) {
       //delete the messages from the database since they are being sent to user
       connection.query(deleteMyMessagesQuery, function(err, results, fields) {
         if(err)
-          return res.send({'response': 'Error', 'error': err});
+          return res.status(400).send({'response': 'Error', 'error': err});
         else
           //return json array of messages
-          return res.json({'response': 'Success', 'messagecount': i, "messages": jsonArray});
+          return res.status(200).json({'response': 'Success', 'messagecount': i, "messages": jsonArray});
       });
     }
   });  
@@ -166,7 +167,7 @@ input:
 sendMessage - post
 localhost:8080/sendMessage
 input:
-{"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InBlcnNvbjEiLCJpYXQiOjE0OTAxNDAzMTh9.isor-pMngHw5faogaYCb-rIJvRG1F8CX2WZ2WYX4jyQ", "receiverName":"chrome24", "message":"sup chrome", "timeStamp":"2017-03-16 02:23:53"}
+{"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InBlcnNvbnl1MiIsImlhdCI6MTQ5MDIzMjA4MCwiZXhwIjoxNDkwMjUwMDgwfQ.zLNz1naO2Z11khfc5Cf7VxoUcYIPVbmiakktcYyyc90", "receiverName":"chrome24", "message":"sup chrome", "timeStamp":"2017-03-16 02:23:53"}
 getMessage - get
 localhost:8080/getMessages?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InBlcnNvbjEiLCJpYXQiOjE0OTAxNDAzMTh9.isor-pMngHw5faogaYCb-rIJvRG1F8CX2WZ2WYX4jyQ
 
